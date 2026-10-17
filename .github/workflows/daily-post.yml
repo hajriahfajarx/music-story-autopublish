@@ -1,0 +1,70 @@
+name: Daily auto-publish
+
+# Instead of sleeping inside the runner (which burns billable Actions
+# minutes for nothing), there are several fixed cron triggers spread across
+# a single daily window (12:00-13:30 WIB). A dependency-free pre-check
+# (scripts/check-slot.mjs) runs first and picks exactly one slot per day via
+# a deterministic hash of today's date + window name — every other trigger
+# exits in a couple of seconds without installing anything. See
+# scripts/check-slot.mjs for the slot map; it must stay in sync with the
+# cron entries below.
+#
+# This window (12:00-13:30 WIB = 05:00-06:30 UTC) is deliberately chosen to
+# not overlap the sibling projects sharing the same Gemini API key:
+# hajriahfajar-autopublish (07:00-08:00 and 19:00-20:30 WIB) and
+# novel-autopublish (21:00-22:00 WIB).
+on:
+  schedule:
+    - cron: "0 5 * * *"
+    - cron: "15 5 * * *"
+    - cron: "30 5 * * *"
+    - cron: "45 5 * * *"
+    - cron: "0 6 * * *"
+    - cron: "15 6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check-slot:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      window: ${{ steps.check.outputs.window }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_CRON: ${{ github.event.schedule }}
+          PUBLISH_TIMEZONE: ${{ secrets.PUBLISH_TIMEZONE }}
+        run: node scripts/check-slot.mjs
+
+  publish:
+    needs: check-slot
+    if: needs.check-slot.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run daily story pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          BLOG_ID: ${{ secrets.BLOG_ID }}
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          PUBLISH_WINDOW_ID: ${{ needs.check-slot.outputs.window }}
+          PUBLISH_TIMEZONE: ${{ secrets.PUBLISH_TIMEZONE }}
+        run: npm run run

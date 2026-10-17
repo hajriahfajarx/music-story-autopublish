@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Setup — music-story-autopublish</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; max-width: 680px; margin: 40px auto; padding: 0 20px; line-height: 1.5; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.05rem; margin-top: 2rem; border-bottom: 1px solid #8884; padding-bottom: 4px; }
+  label { display: block; margin-top: 12px; font-weight: 600; font-size: 0.9rem; }
+  input[type=text] { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; font-size: 0.95rem; }
+  .hint { font-size: 0.8rem; opacity: 0.7; margin-top: 2px; }
+  button { padding: 10px 16px; font-size: 0.95rem; margin-top: 12px; cursor: pointer; }
+  .cat { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .cat input { width: auto; }
+  .status { margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 0.9rem; }
+  .status.ok { background: #1a7f371a; border: 1px solid #1a7f37; }
+  .status.pending { background: #9a67001a; border: 1px solid #9a6700; }
+  .status.err { background: #cf222e1a; border: 1px solid #cf222e; }
+  pre { white-space: pre-wrap; font-size: 0.8rem; background: #8881; padding: 10px; border-radius: 6px; }
+</style>
+</head>
+<body>
+  <h1>music-story-autopublish — Pengaturan</h1>
+  <p class="hint">Halaman ini jalan lokal di komputer kamu saja (localhost:5579). Kredensial Gemini &amp; Google OAuth boleh ditempel langsung dari <code>hajriahfajar-autopublish/.env</code> yang sudah ada — ini blog ketiga di akun Google yang sama, jadi tidak wajib login ulang kalau kamu sudah punya refresh token.</p>
+
+  <h2>1. Gemini</h2>
+  <label>Gemini API Key</label>
+  <input type="text" id="geminiApiKey" placeholder="AIza... (boleh sama persis dengan hajriahfajar-autopublish)" />
+
+  <h2>2. Hubungkan Google Account (Blogger + Sheets)</h2>
+  <label>OAuth Client ID</label>
+  <input type="text" id="clientId" placeholder="xxxxx.apps.googleusercontent.com" />
+  <label>OAuth Client Secret</label>
+  <input type="text" id="clientSecret" />
+  <div class="hint">Boleh sama persis dengan punya hajriahfajar-autopublish — akun Google yang sama (hajriahfajar@gmail.com) punya semua blognya.</div>
+
+  <label>URL Blog musik (buat dulu manual di blogger.com kalau belum ada)</label>
+  <input type="text" id="blogUrl" placeholder="https://nama-blog-musik-baru.blogspot.com/" />
+
+  <label>Blog ID (kosongkan untuk dideteksi otomatis dari URL Blog)</label>
+  <input type="text" id="blogId" placeholder="(opsional) — lihat di URL dashboard Blogger: blogger.com/blog/posts/INI_ID_NYA" />
+
+  <label>Google Sheet ID (kosongkan untuk dibuatkan otomatis)</label>
+  <input type="text" id="sheetId" placeholder="(opsional)" />
+
+  <button id="connectBtn">Connect Google Account</button>
+  <div id="oauthStatus" class="status pending" style="display:none;"></div>
+
+  <h2>3. Jadwal terbit</h2>
+  <p class="hint">1 artikel/hari, acak di jendela 12:00–13:30 WIB (dipilih supaya tidak bentrok jadwal dengan hajriahfajar-autopublish dan novel-autopublish yang berbagi API key Gemini yang sama). Untuk mengubah jam/frekuensi, edit <code>.github/workflows/daily-post.yml</code> dan <code>scripts/check-slot.mjs</code> bersamaan (lihat README).</p>
+
+  <h2>4. Simpan</h2>
+  <div class="cat">
+    <input type="checkbox" id="pushToGithub" />
+    <label style="margin:0" for="pushToGithub">Juga push ke GitHub Actions secrets</label>
+  </div>
+  <div id="ghStatus" class="hint"></div>
+
+  <button id="saveBtn">Save</button>
+  <div id="saveResult"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
