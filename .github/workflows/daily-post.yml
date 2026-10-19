@@ -2,25 +2,30 @@ name: Daily auto-publish
 
 # Instead of sleeping inside the runner (which burns billable Actions
 # minutes for nothing), there are several fixed cron triggers spread across
-# a single daily window (12:00-13:30 WIB). A dependency-free pre-check
-# (scripts/check-slot.mjs) runs first and picks exactly one slot per day via
-# a deterministic hash of today's date + window name — every other trigger
-# exits in a couple of seconds without installing anything. See
-# scripts/check-slot.mjs for the slot map; it must stay in sync with the
-# cron entries below.
+# a single daily window, targeting a real-world landing around 12:00-14:00
+# WIB. A dependency-free pre-check (scripts/check-slot.mjs) runs first and
+# picks exactly one slot per day via a deterministic hash of today's date +
+# window name — every other trigger exits in a couple of seconds without
+# installing anything. See scripts/check-slot.mjs for the slot map; it must
+# stay in sync with the cron entries below.
 #
-# This window (12:00-13:30 WIB = 05:00-06:30 UTC) is deliberately chosen to
-# not overlap the sibling projects sharing the same Gemini API key:
-# hajriahfajar-autopublish (07:00-08:00 and 19:00-20:30 WIB) and
-# novel-autopublish (21:00-22:00 WIB).
+# COMPENSATED: configured 00:37-02:22 UTC (not 05:00-06:30 UTC) because
+# GitHub was observed delivering this account's scheduled triggers ~4-4.5h
+# late (likely queuing congestion on common :00/:15/:30/:45 marks) — shifted
+# earlier + uncommon minute offsets to compensate. This window is also
+# deliberately chosen to not overlap the sibling projects sharing the same
+# Gemini API key: hajriahfajar-autopublish (targeting ~07:00-09:30 and
+# ~19:00-20:30 WIB) and novel-autopublish (targeting ~22:00-23:30 WIB).
 on:
   schedule:
-    - cron: "0 5 * * *"
-    - cron: "15 5 * * *"
-    - cron: "30 5 * * *"
-    - cron: "45 5 * * *"
-    - cron: "0 6 * * *"
-    - cron: "15 6 * * *"
+    - cron: "37 0 * * *"
+    - cron: "52 0 * * *"
+    - cron: "7 1 * * *"
+    - cron: "22 1 * * *"
+    - cron: "37 1 * * *"
+    - cron: "52 1 * * *"
+    - cron: "7 2 * * *"
+    - cron: "22 2 * * *"
   workflow_dispatch: {}
 
 jobs:

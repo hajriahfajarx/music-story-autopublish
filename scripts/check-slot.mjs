@@ -3,13 +3,14 @@
 // "not my turn" run costs only a few seconds of billable runner time instead
 // of sleeping.
 //
-// How it works: there's a single daily window (12:00-13:30 WIB), with 6 fixed
-// cron triggers spread across it (one every 15 min). Each day, a
-// deterministic hash of today's date + window name picks exactly one slot as
-// "today's real slot". Every trigger checks the cron expression GitHub says
-// fired it (github.event.schedule) against a static map; only the one
-// matching today's chosen slot proceeds. This spreads the post across the
-// window without ever sleeping in the runner.
+// How it works: there's a single daily window, targeting a real-world
+// landing around 12:00-14:00 WIB, with 8 fixed cron triggers spread across
+// it (one every 15 min, uncommon minute offsets). Each day, a deterministic
+// hash of today's date + window name picks exactly one slot as "today's
+// real slot". Every trigger checks the cron expression GitHub says fired it
+// (github.event.schedule) against a static map; only the one matching
+// today's chosen slot proceeds. This spreads the post across the window
+// without ever sleeping in the runner.
 //
 // Keep this file dependency-free (Node builtins only) so it can run before
 // `npm ci`.
@@ -17,16 +18,23 @@ import { createHash } from "node:crypto";
 import { appendFileSync } from "node:fs";
 
 // Must match the `schedule:` entries in .github/workflows/daily-post.yml.
-// 12:00-13:30 WIB = 05:00-06:30 UTC (6 slots, 15 min apart).
+//
+// COMPENSATED: configured 00:37-02:22 UTC for a real-world landing around
+// 05:00-07:00 UTC = 12:00-14:00 WIB. Observed in practice: GitHub was
+// delivering this account's scheduled triggers ~4-4.5h late (likely queuing
+// congestion on common :00/:15/:30/:45 marks), so this is shifted earlier +
+// uses uncommon minute offsets. Re-tune if the delay pattern changes.
 const CRON_MAP = {
-  "0 5 * * *": { window: "daily", slot: 0 },
-  "15 5 * * *": { window: "daily", slot: 1 },
-  "30 5 * * *": { window: "daily", slot: 2 },
-  "45 5 * * *": { window: "daily", slot: 3 },
-  "0 6 * * *": { window: "daily", slot: 4 },
-  "15 6 * * *": { window: "daily", slot: 5 },
+  "37 0 * * *": { window: "daily", slot: 0 },
+  "52 0 * * *": { window: "daily", slot: 1 },
+  "7 1 * * *": { window: "daily", slot: 2 },
+  "22 1 * * *": { window: "daily", slot: 3 },
+  "37 1 * * *": { window: "daily", slot: 4 },
+  "52 1 * * *": { window: "daily", slot: 5 },
+  "7 2 * * *": { window: "daily", slot: 6 },
+  "22 2 * * *": { window: "daily", slot: 7 },
 };
-const SLOTS_PER_WINDOW = { daily: 6 };
+const SLOTS_PER_WINDOW = { daily: 8 };
 
 function todayDateString(timeZone) {
   return new Intl.DateTimeFormat("en-CA", {
