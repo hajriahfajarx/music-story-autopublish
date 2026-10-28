@@ -20,10 +20,14 @@ function dateStringInTz(date, timeZone) {
 
 // Single daily window (unlike the tech blog's per-window tracking) — this
 // project only ever has one post/day, so "already handled today" is enough.
+// Only "published" blocks the rest of today's slots -- a "failed" row (e.g.
+// a transient Gemini 503 overload spell) must NOT block retries, otherwise
+// a single bad slot wastes the whole day's redundancy and nothing goes out
+// at all that day.
 function alreadyHandledToday(pastLog, timeZone) {
   const today = dateStringInTz(new Date(), timeZone);
   return pastLog.some((row) => {
-    if (!row.date || (row.status !== "published" && row.status !== "failed")) return false;
+    if (!row.date || row.status !== "published") return false;
     const rowDate = new Date(row.date);
     if (Number.isNaN(rowDate.valueOf())) return false;
     return dateStringInTz(rowDate, timeZone) === today;
@@ -65,7 +69,7 @@ async function main() {
   } else if (windowId === "manual") {
     console.log('PUBLISH_WINDOW_ID is "manual" (workflow_dispatch or local run) — dedup guard skipped, this is an intentional extra run.');
   } else if (alreadyHandledToday(pastLog, config.publishWindow.timezone)) {
-    console.log("Today already has a published/failed row — skipping (prevents double-posting if slots ever overlap).");
+    console.log("Today already has a published row — skipping (prevents double-posting if slots ever overlap).");
     return;
   }
 
